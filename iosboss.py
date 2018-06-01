@@ -54,8 +54,7 @@ if https_server==True:
     config_file.append("ip http secure-server")
 if https_server==False:
     config_file.append("no ip http secure-server")
-    
-# IPv6 config
+
 if ipv6==True:
     config_file.append("ipv6 unicast-routing")
 
@@ -76,12 +75,12 @@ with open('switch.csv') as csv_file:
             config_file.append(
                 "  switchport trunk encapsulation dot1q\n  switchport mode trunk")
             config_file.append(
-                "  switchport trunk native vlan" + row['tr_tag'])
+                "  switchport trunk native vlan " + row['tr_tag'])
             config_file.append(
-                "  switchport trunk allowed vlan" + row['tr_untag'])
+                "  switchport trunk allowed vlan " + row['tr_untag'])
             config_file.append("  no shutdown\n!")
         else:
-            config_file.append("  switchport nonegotiate\n  shutdown")
+            config_file.append("  switchport nonegotiate\n  shutdown\n!")
 
 config_file.append("write memory\ny\n")
 

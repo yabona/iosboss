@@ -15,6 +15,6 @@ banner_login = 'This device is protected by Ron Jeremy. Violators will be violat
 # Routing and services:
 http_server = False
 https_server = True
-ipv6 = True
+ipv6 = False
 #vlan_1_cidr = '192.168.0.1/24'
 
