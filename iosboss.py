@@ -54,7 +54,8 @@ if https_server==True:
     config_file.append("ip http secure-server")
 if https_server==False:
     config_file.append("no ip http secure-server")
-
+    
+# IPv6 config
 if ipv6==True:
     config_file.append("ipv6 unicast-routing")
 
