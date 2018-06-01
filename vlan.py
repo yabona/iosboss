@@ -1,3 +1,4 @@
+# { vlan_id: ("Description", [bool]Active)
 vlan_db = {
     10: ("Finance-2Floor", True),
     15: ("Marketing-3Floor", True),
