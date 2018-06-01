@@ -75,9 +75,9 @@ with open('switch.csv') as csv_file:
             config_file.append(
                 "  switchport trunk encapsulation dot1q\n  switchport mode trunk")
             config_file.append(
-                "  switchport trunk native vlan " + row['tr_tag'])
+                "  switchport trunk native vlan " + row['tr_untag'])
             config_file.append(
-                "  switchport trunk allowed vlan " + row['tr_untag'])
+                "  switchport trunk allowed vlan " + row['tr_tag'])
             config_file.append("  no shutdown\n!")
         else:
             config_file.append("  switchport nonegotiate\n  shutdown\n!")
