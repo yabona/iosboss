@@ -17,14 +17,18 @@ def system_config():
     out.append("ip domain-name " + domain)
     if not domain_lookup:
         out.append("no ip domain lookup")
-    out.append('\n')
     return out
 
 # auth_config configures VTY and CONS authentication schemes (including SSH)
 def auth_config():
     out = []
 
-    out.append('\n! -- Authentication:\n')
+    out.append('\n\n'+
+        '! -------------------- !\n' +
+        '! -- Authentication -- !\n' +
+        '! -------------------- !\n'
+    )
+
     out.append("line vty 0 15\n  login local")
     if constrain_ssh==True:
         out.append("  transport input ssh")
@@ -49,14 +53,19 @@ def auth_config():
 
     out.append("banner login # " + banner_login + "#")
     out.append('username admin priv 15 secret ' + admin_password)
-
+    out.append('\n')
     return out
 
 # Configures services running on the device, and how they will be configured. 
 def services_config():
     out = [] 
 
-    out.append('\n! -- System services config: \n')
+    out.append('\n' + 
+        '! ---------------------------- !\n' +
+        '! -- System services config -- !\n' +
+        '! ---------------------------- !\n'
+    )
+
     if enable_ssh:
         out.append("crypto key generate rsa general-keys modulus " + rsa_modulus + "\n!")
         out.append("ip ssh version 2\nip ssh auth retries 5\nip ssh time-out 30")
@@ -77,21 +86,24 @@ def services_config():
     if ip_routing==True:
         out.append("ip routing")
 
-    out.append("!")
     return out
 
 # VLAN database config:
 def vlan_config():
     out = []
 
-    out.append('\n! -- Vlan Database Config: \n')
+    out.append('\n\n' +
+        '! -------------------------- !\n' +
+        '! -- Vlan Database Config -- !\n' +
+        '! -------------------------- !\n'
+    )
     for i in vlan_db:
         vlan, name = str(i), vlan_db[i][0]
         out.append("vlan " + vlan)
         out.append("  name " + name)
         if vlan_db[i][1] == False:
             out.append("  state suspend")
-    out.append("!\nexit\n!")
+    out.append("!\nexit\n")
     
     return out 
 
@@ -99,7 +111,11 @@ def vlan_config():
 def switch_config(): 
     out = []
 
-    out.append('\n! -- Switch configuration: \n')
+    out.append('\n' +
+        '! ----------------------- !\n' +
+        '! -- Switchport Config -- !\n' +
+        '! ----------------------- !\n'
+    )
 
     with open('switch.csv', 'r') as csv_file:
         reader = csv.DictReader(csv_file, delimiter=',')
@@ -122,14 +138,18 @@ def switch_config():
                 out.append("  no shutdown\n!")
             else:
                 out.append("  switchport nonegotiate\n  shutdown\n!")
-    out.append("exit\n!")
+    out.append("exit\n")
     return out
 
 # svi_config configures switch virtual interfaces for inter-vlan routing.
 def svi_config():
     out = []
 
-    out.append('\n! -- SVI virtual interface configuration:\n')
+    out.append('\n' + 
+        '! ------------------------- !\n' +
+        '! -- Virtual Interfaces -- !\n' +
+        '! ------------------------- !\n'
+    )
 
     with open("svi.csv", 'r') as csv_file:
         reader = csv.DictReader(csv_file, delimiter=',')
@@ -156,15 +176,19 @@ def svi_config():
             if i['dhcp_relay']:
                 out.append("  ip helper address " + i['dhcp_relay'])
             out.append("  no shutdown\n!")
-    out.append('exit\n!')
+    out.append('exit\n')
     return out
 
 # routing_config defines how to handle IP and IPv6 routing protocols.
-# Currently supported: EIGRP4, EIGRP6, OSPF4, RIPv2
+# Currently supported: EIGRP4, EIGRP6, OSPF4
+# todo: add support for ospfv3/address families. 
 def routing_config(): 
     out = []
 
-    out.append('\n! -- Dynamic Routing Configuration:\n')
+    out.append('\n' + 
+    '! ----------------------- !\n' +
+    '! -- Routing Protocols -- !\n' +
+    '! ----------------------- !\n')
 
     for i in static_routes:
         out.append('ip route ' + i)
