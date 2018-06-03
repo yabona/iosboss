@@ -4,9 +4,9 @@ import csv
 import configparser
 import datetime 
 
-from systemcfg import *
-from routing import *
-from vlan import *
+from cfg_sys import *
+from cfg_L3 import *
+from cfg_L2 import *
 
 config_file = []
 
