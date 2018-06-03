@@ -227,7 +227,7 @@ def main():
 
     config_file = []
     config_file.append([
-        '! -- Configuration script for device' + hostname, 
+        '! -- Configuration script for device ' + hostname, 
         '! -- Generated on ' + datetime.datetime.now().isoformat(),
         '! -- https://github.com/yabona/iosboss\n\n',
         'configure terminal'
