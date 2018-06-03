@@ -234,7 +234,7 @@ def main():
     config_file = []
     config_file.append([
         '! -- Configuration script for device ' + hostname, 
-        '! -- Generated on ' + datetime.datetime.now().isoformat(),
+        '! -- Generated on {:%Y/%m/%d-%H:%M}'.format(datetime.datetime.now()),
         '! -- https://github.com/yabona/iosboss\n\n',
         'configure terminal'
     ])
@@ -247,9 +247,9 @@ def main():
     config_file.append(svi_config())
     config_file.append(routing_config())
 
-    config_file.append(['do write-memory'])
+    config_file.append(['\ndo write-memory'])
 
-    output_file_name = hostname + '.cfg'
+    output_file_name = hostname + '{:-%Y%m%d-%H%M}.cfg'.format(datetime.datetime.now())
     with open (output_file_name, 'a') as output:
         for i in config_file: output.write("\n".join(i))
     
