@@ -1,6 +1,6 @@
 # General:
-hostname = 'xyu-n5w-test01'
-domain = 'nb.zapto.org'
+hostname = 'xyu-n5w-ds01'
+domain = 'lab.internal'
 domain_lookup = False
 admin_password = 'cisco123'
 password_encryption = True
@@ -16,5 +16,6 @@ banner_login = 'This device is protected by Ron Jeremy. Violators will be violat
 http_server = False
 https_server = True
 ipv6 = False
-#vlan_1_cidr = '192.168.0.1/24'
+ip_routing = True
+
 
