@@ -166,7 +166,7 @@ def routing_config():
 
     if eigrp4_enable==True: 
         out.append('router eigrp ' + hostname.upper())
-        out.append('  address-family ipv4 unicast autonomus-system ' + str(eigrp4_asn) +
+        out.append('  address-family ipv4 unicast autonomous-system ' + str(eigrp4_asn) +
             '\n    eigrp router-id ' + eigrp4_rid
         )
         
@@ -192,7 +192,7 @@ def routing_config():
         
     if eigrp6_enable==True:
         out.append('router eigrp ' + hostname.upper())
-        out.append('  address-family ipv6 unicast autonomus-system ' + str(eigrp6_asn) +
+        out.append('  address-family ipv6 unicast autonomous-system ' + str(eigrp6_asn) +
             '\n    eigrp router-id ' + eigrp6_rid
         )
 
