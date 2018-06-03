@@ -17,11 +17,14 @@ def system_config():
     out.append("ip domain-name " + domain)
     if not domain_lookup:
         out.append("no ip domain lookup")
+    out.append('\n')
     return out
 
 # auth_config configures VTY and CONS authentication schemes (including SSH)
 def auth_config():
     out = []
+
+    out.append('\n! -- Authentication:\n')
     out.append("line vty 0 15\n  login local")
     if constrain_ssh==True:
         out.append("  transport input ssh")
@@ -43,14 +46,17 @@ def auth_config():
 
     if password_encryption==True:
         out.append("service password encryption")
+
     out.append("banner login # " + banner_login + "#")
-    out.append("username admin priv 15 secret " + admin_password)
+    out.append('username admin priv 15 secret ' + admin_password)
 
     return out
 
 # Configures services running on the device, and how they will be configured. 
 def services_config():
     out = [] 
+
+    out.append('\n! -- System services config: \n')
     if enable_ssh:
         out.append("crypto key generate rsa general-keys modulus " + rsa_modulus + "\n!")
         out.append("ip ssh version 2\nip ssh auth retries 5\nip ssh time-out 30")
