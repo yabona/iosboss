@@ -1,21 +1,23 @@
 
 import sys
 import csv
+import json
+import configparser
 import configparser
 import datetime 
 
-from cfg_sys import *
-from cfg_L3 import *
-from cfg_L2 import *
+cfg = configparser.ConfigParser() 
+cfg.read('config.ini')
 
 config_file = []
 
 # system_config sets up basic system parameters
 def system_config(): 
     out = []
-    out.append("\nhostname " + hostname)
-    out.append("ip domain-name " + domain)
-    if not domain_lookup:
+    out.append("\nhostname " + cfg.get('SYSTEM','hostname'))
+    out.append("ip domain-name " + cfg.get('SYSTEM','domain'))
+
+    if cfg.getboolean('SYSTEM','domain_lookup') == False:
         out.append("no ip domain lookup")
     return out
 
@@ -30,30 +32,31 @@ def auth_config():
     )
 
     out.append("line vty 0 15\n  login local")
-    if constrain_ssh==True:
+    if cfg.getboolean('AUTH','constrain_ssh') == True:
         out.append("  transport input ssh")
     else:
         out.append("  transport input all")
 
     # Console config:
     out.append("line con 0")
-    if cons_login==False:
+    if cfg.getboolean('AUTH','cons_login') == False:
         out.append("  no login")
     else:
         out.append("  login local")
-
-    if logging_sync:
+    if cfg.getboolean('AUTH','logging_sync') == True :
         out.append("  logging sync")
-    if cons_timeout==False:
+    if cfg.getboolean('AUTH','cons_timeout')==False:
         out.append("  exec timeout 0 0")
     out.append("exit\n!")
 
-    if password_encryption==True:
+    # Password encryption: 
+    if cfg.getboolean('AUTH','password_encryption') == True:
         out.append("service password encryption")
 
-    out.append("banner login # " + banner_login + "#")
-    out.append('username admin priv 15 secret ' + admin_password)
+    out.append("banner login # " + cfg.get('AUTH','banner_login') + "#")
+    out.append('username admin priv 15 secret ' + cfg.get('AUTH','admin_password'))
     out.append('\n')
+
     return out
 
 # Configures services running on the device, and how they will be configured. 
@@ -66,24 +69,25 @@ def services_config():
         '! ---------------------------- !\n'
     )
 
-    if enable_ssh:
-        out.append("crypto key generate rsa general-keys modulus " + rsa_modulus + "\n!")
+    if cfg.getboolean('SERVICES','ssh_enable') == True:
+        out.append("crypto key generate rsa general-keys modulus " + 
+            cfg.get('SERVICES','rsa_modulus') + "\n!")
         out.append("ip ssh version 2\nip ssh auth retries 5\nip ssh time-out 30")
 
-    if http_server==True:
+    if cfg.getboolean('SERVICES','http_server') == True:
         out.append("ip http server")
-    if http_server==False:
+    if cfg.getboolean('SERVICES','http_server') == False:
         out.append("no ip http server")    
 
-    if https_server==True:
+    if cfg.getboolean('SERVICES','https_server') == True:
         out.append("ip http secure-server")
-    if https_server==False:
+    if cfg.getboolean('SERVICES','https_server') == False:
         out.append("no ip http secure-server")
 
-    if ipv6==True:
+    if cfg.getboolean('SERVICES','ipv6_routing') == True:
         out.append("ipv6 unicast-routing")
     
-    if ip_routing==True:
+    if cfg.getboolean('SERVICES','ip_routing') == True:
         out.append("ip routing")
 
     return out
@@ -97,14 +101,17 @@ def vlan_config():
         '! -- Vlan Database Config -- !\n' +
         '! -------------------------- !\n'
     )
-    for i in vlan_db:
-        vlan, name = str(i), vlan_db[i][0]
-        out.append("vlan " + vlan)
-        out.append("  name " + name)
-        if vlan_db[i][1] == False:
-            out.append("  state suspend")
-    out.append("!\nexit\n")
-    
+
+    with open('vlan.csv', 'r') as csv_file:
+        reader = csv.DictReader(csv_file, delimiter=',')
+
+        for i in reader:
+            out.append(
+                "vlan " + i['vlan_id'] + "\n" +
+                "  name "  + i['name'] + "\n" +
+                "  state " + i['state'] 
+            )
+    out.append("  exit\n")
     return out 
 
 # switch_config configures switchports according to the CSV file imported. 
@@ -179,9 +186,7 @@ def svi_config():
     out.append('exit\n')
     return out
 
-# routing_config defines how to handle IP and IPv6 routing protocols.
-# Currently supported: EIGRP4, EIGRP6, OSPF4
-# todo: add support for ospfv3/address families. 
+# Sets up routing information
 def routing_config(): 
     out = []
 
@@ -190,17 +195,23 @@ def routing_config():
     '! -- Routing Protocols -- !\n' +
     '! ----------------------- !\n')
 
-    for i in static_routes:
+    for i in json.loads(cfg.get('STATIC','static_routes')):
         out.append('ip route ' + i)
     out.append('!')
+    return out 
 
-    if eigrp4_enable==True: 
-        out.append('router eigrp ' + hostname.upper())
-        out.append('  address-family ipv4 unicast autonomous-system ' + str(eigrp4_asn) +
-            '\n    eigrp router-id ' + eigrp4_rid
+# Configures the EIGRP routing protocol
+def routing_config_eigrp():
+    out = []
+
+    # IPv4 EIGRP config: 
+    if cfg.getboolean('EIGRP','eigrp4_enable')==True: 
+        out.append('router eigrp ' + cfg.get('SYSTEM','hostname').upper())
+        out.append('  address-family ipv4 unicast autonomous-system ' + cfg.get('EIGRP','eigrp4_asn') +
+            '\n    eigrp router-id ' + cfg.get('EIGRP','eigrp4_rid')
         )
         
-        for i in eigrp4_networks:
+        for i in json.loads(cfg.get('EIGRP','eigrp4_networks')):
             out.append('    network ' + i)
 
         out.append('    af-interface default' +
@@ -208,22 +219,23 @@ def routing_config():
             '\n      exit-af-interface'
         )
 
-        for i in eigrp4_interfaces:
+        for i in json.loads(cfg.get('EIGRP','eigrp4_interfaces')):
             out.append('    af-interface ' + i + 
                 '\n      no passive interface' +
                 '\n      exit-af-interface'
             )
-        if eigrp4_redist_static==True:
+        if cfg.getboolean('EIGRP','eigrp4_redist_static')==True:
             out.append('    topology base' +
                 '\n      redistribute static' + 
                 '\n      exit'
             )
         out.append('    exit-address-family\n  exit\n!')
-        
-    if eigrp6_enable==True:
-        out.append('router eigrp ' + hostname.upper())
-        out.append('  address-family ipv6 unicast autonomous-system ' + str(eigrp6_asn) +
-            '\n    eigrp router-id ' + eigrp6_rid
+    
+    # IPv6 EIGRP config: 
+    if cfg.getboolean('EIGRP','eigrp6_enable')==True:
+        out.append('router eigrp ' + cfg.get('SYSTEM','hostname').upper())
+        out.append('  address-family ipv6 unicast autonomous-system ' + cfg.get('EIGRP','eigrp6_asn') +
+            '\n    eigrp router-id ' + cfg.get('EIGRP','eigrp6_rid')
         )
 
         out.append('    af-interface default' +
@@ -231,25 +243,39 @@ def routing_config():
             '\n      exit-af-interface'
         )
 
-        for i in eigrp6_interfaces:
+        for i in json.loads(cfg.get('EIGRP','eigrp6_interfaces')):
             out.append('    af-interface ' + i + 
                 '\n      no passive interface' +
                 '\n      exit-af-interface'
             )
-        if eigrp6_redist_static==True:
+        if cfg.getboolean('EIGRP','eigrp6_redist_static') == True:
             out.append('    topology base' +
                 '\n      redistribute static' + 
                 '\n      exit'
             )
         out.append('    exit-address-family\n  exit\n!')
+    return out 
 
-    if ospf4_enable==True:
+# Configures the OSPF routing protocol
+def routing_config_ospf(): 
+    out = []
+    out.append('\n')
+    # OSPF config: 
+    if cfg.getboolean('OSPF','ospf4_enable') == True:
         out.append('router ospf 1' +
-            '\n  router-id ' + ospf4_rid
+            '\n  router-id ' + cfg.get('OSPF','ospf4_rid')
         )
-        for i in ospf4_networks:
-            out.append('  network ' + i + ' area ' + str(ospf4_networks[i]))
-        out.append('exit\n!')
+
+        #areas = []
+        for i in cfg.items('OSPF'):
+            if 'area' in str(i):
+                ar = i[0]
+                ar_name = ar.replace('_', ' ')
+                out.append('\n  ! -- ' + ar_name + ' enabled interfaces:')
+                nets = json.loads(cfg.get('OSPF',ar))
+                for n in nets:
+                    out.append('  network ' + n + ' ' + ar_name) 
+    out.append('  exit\n!\n')
     return out
 
 # Main function, outputs the results to a file and/or the console. 
@@ -257,7 +283,7 @@ def main():
 
     config_file = []
     config_file.append([
-        '! -- Configuration script for device ' + hostname, 
+        '! -- Configuration script for device ' + cfg.get('SYSTEM','hostname'), 
         '! -- Generated on {:%Y/%m/%d-%H:%M}'.format(datetime.datetime.now()),
         '! -- https://github.com/yabona/iosboss\n\n',
         'configure terminal'
@@ -270,10 +296,12 @@ def main():
     config_file.append(switch_config())
     config_file.append(svi_config())
     config_file.append(routing_config())
-
+    config_file.append(routing_config_eigrp())
+    config_file.append(routing_config_ospf())
+    
     config_file.append(['\ndo write-memory'])
 
-    output_file_name = hostname + '{:-%Y%m%d-%H%M}.cfg'.format(datetime.datetime.now())
+    output_file_name = cfg.get('SYSTEM','hostname') + '{:-%Y%m%d-%H%M}.cfg'.format(datetime.datetime.now())
     with open (output_file_name, 'a') as output:
         for i in config_file: output.write("\n".join(i))
     
