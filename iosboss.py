@@ -11,6 +11,8 @@ cfg.read('config.ini')
 
 config_file = []
 
+# todo: use command line arguments to configure the path and output, formatting, etc. 
+
 # system_config sets up basic system parameters
 def system_config(): 
     out = []
